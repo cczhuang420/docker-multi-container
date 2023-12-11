@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+# build the test image
+before_install:
+  - docker build -t cczhuang/react-test -f ./client/Dockerfile.dev ./client
+
+# test the react project
+script:
+  - docker run -e CI=true cczhuang/react-test npm test
+
+# build prod images
+after_success:
+  - docker build -t cczhuang/docker-multi-client ./client
+  - docker build -t cczhuang/docker-multi-nginx ./nginx
+  - docker build -t cczhuang/docker-multi-server ./server
+  - docker build -t cczhuang/docker-multi-worker ./worker
+  # log in to the docker CLI - {use env vaiables DOCKER_ID & DOCKER_PASSWORD in the travis portal}
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # push these images to docker hub
+  - docker push cczhuang/docker-multi-client
+  - docker push cczhuang/docker-multi-nginx
+  - docker push cczhuang/docker-multi-server
+  - docker push cczhuang/docker-multi-worker
